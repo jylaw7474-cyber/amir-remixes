@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { api } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
 
 const MAX_BYTES = 10 * 1024 * 1024;
@@ -12,8 +13,8 @@ export interface UploadedAudio {
 }
 
 /**
- * Puts an mp3/m4a straight into the user's folder of our private bucket (so big files
- * skip our server), plus the rights confirmation Mureka's terms require.
+ * Puts an mp3/m4a straight into the owner's folder of our private bucket through a
+ * signed upload slot (so big files skip our server), plus the rights confirmation Mureka's terms require.
  */
 export default function AudioUpload({
   label,
@@ -40,15 +41,18 @@ export default function AudioUpload({
     if (file.size > MAX_BYTES) return fail("הקובץ גדול מ-10MB");
 
     setState("uploading");
-    const supabase = createClient();
-    const { data } = await supabase.auth.getUser();
-    if (!data.user) return fail("צריך להתחבר מחדש");
+    let slot: { path: string; token: string };
+    try {
+      slot = await api<{ path: string; token: string }>("/api/upload-url", { body: { ext } });
+    } catch (e) {
+      return fail((e as Error).message);
+    }
 
-    const path = `${data.user.id}/uploads/${crypto.randomUUID()}.${ext}`;
-    const { error: uploadError } = await supabase.storage
-      .from("tracks")
-      .upload(path, file, { contentType: ext === "mp3" ? "audio/mpeg" : "audio/mp4" });
+    const { error: uploadError } = await createClient()
+      .storage.from("tracks")
+      .uploadToSignedUrl(slot.path, slot.token, file, { contentType: ext === "mp3" ? "audio/mpeg" : "audio/mp4" });
     if (uploadError) return fail(uploadError.message);
+    const path = slot.path;
 
     setState("idle");
     onChange({ path, name: file.name });

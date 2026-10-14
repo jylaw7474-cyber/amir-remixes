@@ -1,24 +1,20 @@
 import "server-only";
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import type { User } from "@supabase/supabase-js";
-import { createClient } from "./supabase/server";
-import { isAllowedEmail } from "./allowlist";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { createAdminClient, ownerId } from "./supabase/admin";
+import { isValidSession, SESSION_COOKIE } from "./session";
 
-type Supabase = Awaited<ReturnType<typeof createClient>>;
-
-/** For route handlers: the signed-in, allow-listed user, or a 401/403 response to return */
+/** For route handlers: a valid app session plus the owner's id, or a 401 response to return */
 export async function requireUser(): Promise<
-  { ok: true; user: User; supabase: Supabase } | { ok: false; response: NextResponse }
+  { ok: true; user: { id: string }; supabase: SupabaseClient } | { ok: false; response: NextResponse }
 > {
-  const supabase = await createClient();
-  const { data } = await supabase.auth.getUser();
-  if (!data.user) {
+  const cookie = (await cookies()).get(SESSION_COOKIE)?.value;
+  if (!(await isValidSession(cookie))) {
     return { ok: false, response: NextResponse.json({ error: "לא מחובר" }, { status: 401 }) };
   }
-  if (!isAllowedEmail(data.user.email)) {
-    return { ok: false, response: NextResponse.json({ error: "אין הרשאה" }, { status: 403 }) };
-  }
-  return { ok: true, user: data.user, supabase };
+  const supabase = createAdminClient();
+  return { ok: true, user: { id: await ownerId(supabase) }, supabase };
 }
 
 export function errorResponse(err: unknown, status = 502) {

@@ -1,14 +1,13 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { cookies } from "next/headers";
+import { isValidSession, SESSION_COOKIE } from "@/lib/session";
 import Credits from "./Credits";
 import SignOut from "./SignOut";
 
 /** Reads the session cookie, so it streams in behind the static logo */
 async function UserNav() {
-  const supabase = await createClient();
-  const { data } = await supabase.auth.getUser();
-  if (!data.user) return null;
+  if (!(await isValidSession((await cookies()).get(SESSION_COOKIE)?.value))) return null;
 
   return (
     <>
@@ -18,7 +17,6 @@ async function UserNav() {
       </nav>
       <div className="ms-auto flex items-center gap-4 text-sm text-muted">
         <Credits />
-        <Link href="/account" className="hover:text-ink">סיסמה</Link>
         <SignOut />
       </div>
     </>

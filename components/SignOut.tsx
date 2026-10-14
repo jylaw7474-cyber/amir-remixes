@@ -1,7 +1,6 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 
 export default function SignOut() {
   const router = useRouter();
@@ -9,7 +8,7 @@ export default function SignOut() {
     <button
       className="hover:text-ink"
       onClick={async () => {
-        await createClient().auth.signOut();
+        await fetch("/api/logout", { method: "POST" });
         router.replace("/login");
         router.refresh();
       }}

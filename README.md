@@ -27,19 +27,14 @@ Next.js · Supabase (כניסה, דאטה-בייס, קבצים) · Vercel (אי�
    | `NEXT_PUBLIC_SUPABASE_URL` | ה-Project URL מ-Supabase |
    | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | ה-Publishable key מ-Supabase |
    | `MUREKA_API_KEY` | המפתח מ-Mureka |
-   | `ALLOWED_EMAILS` | המייל שלך. כמה מיילים מפרידים בפסיק |
+   | `ALLOWED_EMAILS` | המייל שלך (משמש כחשבון הבעלים של השירים) |
+   | `APP_PASSWORD` | הסיסמה לכניסה לאפליקציה. בוחרים לבד |
+   | `SUPABASE_SECRET_KEY` | ב-Supabase: ‏Project Settings → API Keys → Secret keys |
 
 4. לוחצים **Deploy**. בסוף מקבלים כתובת, למשל `https://amir-remixes.vercel.app`.
 
-### 4. לחבר את הכתובת ל-Supabase
-ב-Supabase: ‏**Authentication → URL Configuration**:
-- **Site URL**: הכתובת מ-Vercel
-- **Redirect URLs**: מוסיפים `https://<הכתובת-שלך>/auth/callback`
-
-בלי השלב הזה, קישור הכניסה שמגיע במייל לא יעבוד.
-
-### 5. להיכנס
-פותחים את הכתובת, מקלידים את המייל שמופיע ב-`ALLOWED_EMAILS`, ולוחצים על הקישור שמגיע במייל.
+### 4. להיכנס
+פותחים את הכתובת ומקלידים את הסיסמה מ-`APP_PASSWORD`. בלי מיילים ובלי קישורים. החלפת הסיסמה ב-Vercel (ואז Redeploy) מנתקת את כל המכשירים.
 
 ## איך זה בנוי
 
@@ -47,7 +42,7 @@ Next.js · Supabase (כניסה, דאטה-בייס, קבצים) · Vercel (אי�
 | --- | --- |
 | `lib/mureka.ts` | הלקוח של Mureka. המפתח לא יוצא מהשרת |
 | `app/api/*` | נקודות הקצה: יצירה, מעקב, מילים, ערוצים, יתרה. כל אחת בודקת שהמשתמש מחובר ונמצא ברשימה |
-| `proxy.ts` | מרענן את הכניסה ושולח מבקרים לא מחוברים ל-`/login` |
+| `proxy.ts` | שולח מבקרים בלי סיסמה ל-`/login` |
 | `components/Studio.tsx` | מסך הסטודיו |
 | `supabase/migrations/` | הטבלה `tracks`, ההרשאות, והתיקייה הפרטית `tracks` לקבצי האודיו |
 
@@ -64,4 +59,3 @@ npm run dev                  # http://localhost:3000
 npm test
 ```
 
-ב-Supabase צריך להוסיף גם `http://localhost:3000/auth/callback` ל-Redirect URLs.
