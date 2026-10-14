@@ -44,3 +44,6 @@ create policy "own audio: insert" on storage.objects for insert
   with check (bucket_id = 'tracks' and (storage.foldername(name))[1] = auth.uid()::text);
 create policy "own audio: delete" on storage.objects for delete
   using (bucket_id = 'tracks' and (storage.foldername(name))[1] = auth.uid()::text);
+-- upsert (re-copying a finished song) needs update as well as insert
+create policy "own audio: update" on storage.objects for update
+  using (bucket_id = 'tracks' and (storage.foldername(name))[1] = auth.uid()::text);
