@@ -1,36 +1,65 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AMIR REMIXES
 
-## Getting Started
+סטודיו מוזיקה אישי: שירים מתיאור, שירים מהמילים שלך, קטעים אינסטרומנטליים, כתיבת מילים, הארכת שירים והפרדת ערוצים. היצירה עצמה נעשית דרך ה-API הרשמי של Mureka, עם המפתח והקרדיטים שלך.
 
-First, run the development server:
+Next.js · Supabase (כניסה, דאטה-בייס, קבצים) · Vercel (אירוח)
+
+## הקמה, פעם אחת (בערך 15 דקות)
+
+### 1. Supabase: דאטה-בייס וכניסה
+1. נכנסים ל-https://supabase.com, ‏Start your project, ונכנסים עם GitHub.
+2. ‏**New project**. שם: `amir-remixes`. בוחרים סיסמה לדאטה-בייס ושומרים אותה. אזור: Frankfurt, הכי קרוב לישראל.
+3. כשהפרויקט מוכן, הולכים ל-**SQL Editor**, מדביקים את כל התוכן של `supabase/migrations/0001_init.sql`, ולוחצים **Run**.
+4. ב-**Project Settings → API** (או בכפתור **Connect**) מעתיקים שני ערכים:
+   - Project URL
+   - Publishable key (בפרויקטים ישנים: anon public key)
+
+### 2. Mureka: מפתח API
+נכנסים ל-https://platform.mureka.ai, ‏**API Keys**, ויוצרים מפתח. היצירה נעשית על חשבון הקרדיטים של החשבון הזה.
+
+### 3. Vercel: העלאה לאוויר
+1. נכנסים ל-https://vercel.com ונכנסים עם GitHub.
+2. ‏**Add New → Project**, בוחרים את הריפו `amir-remixes` ולוחצים **Import**.
+3. לפני **Deploy**, פותחים את **Environment Variables** ומוסיפים:
+
+   | שם | ערך |
+   | --- | --- |
+   | `NEXT_PUBLIC_SUPABASE_URL` | ה-Project URL מ-Supabase |
+   | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | ה-Publishable key מ-Supabase |
+   | `MUREKA_API_KEY` | המפתח מ-Mureka |
+   | `ALLOWED_EMAILS` | המייל שלך. כמה מיילים מפרידים בפסיק |
+
+4. לוחצים **Deploy**. בסוף מקבלים כתובת, למשל `https://amir-remixes.vercel.app`.
+
+### 4. לחבר את הכתובת ל-Supabase
+ב-Supabase: ‏**Authentication → URL Configuration**:
+- **Site URL**: הכתובת מ-Vercel
+- **Redirect URLs**: מוסיפים `https://<הכתובת-שלך>/auth/callback`
+
+בלי השלב הזה, קישור הכניסה שמגיע במייל לא יעבוד.
+
+### 5. להיכנס
+פותחים את הכתובת, מקלידים את המייל שמופיע ב-`ALLOWED_EMAILS`, ולוחצים על הקישור שמגיע במייל.
+
+## איך זה בנוי
+
+| קובץ | מה הוא עושה |
+| --- | --- |
+| `lib/mureka.ts` | הלקוח של Mureka. המפתח לא יוצא מהשרת |
+| `app/api/*` | נקודות הקצה: יצירה, מעקב, מילים, ערוצים, יתרה. כל אחת בודקת שהמשתמש מחובר ונמצא ברשימה |
+| `proxy.ts` | מרענן את הכניסה ושולח מבקרים לא מחוברים ל-`/login` |
+| `components/Studio.tsx` | מסך הסטודיו |
+| `supabase/migrations/` | הטבלה `tracks`, ההרשאות, והתיקייה הפרטית `tracks` לקבצי האודיו |
+
+כששיר מוכן, השרת מעתיק את קבצי ה-MP3 לתיקייה הפרטית ב-Supabase, כדי שהספרייה תמשיך לעבוד גם אחרי שהקישורים של Mureka פגים.
+
+## פיתוח מקומי
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp .env.example .env.local   # למלא את הערכים
+npm install
+npm run dev                  # http://localhost:3000
+npm test
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+ב-Supabase צריך להוסיף גם `http://localhost:3000/auth/callback` ל-Redirect URLs.
