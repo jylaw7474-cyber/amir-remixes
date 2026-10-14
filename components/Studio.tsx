@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { api } from "@/lib/api";
 import type { Mode, TrackView } from "@/lib/tracks";
+import AudioUpload, { type UploadedAudio } from "./AudioUpload";
 import TrackCard from "./TrackCard";
 import { useTracks } from "./useTracks";
 
@@ -12,6 +13,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "easy", label: "שיר מתיאור" },
   { id: "song", label: "שיר מהמילים שלי" },
   { id: "instrumental", label: "אינסטרומנטלי" },
+  { id: "remix", label: "רימיקס" },
   { id: "extend", label: "הארכת שיר" },
   { id: "stems", label: "הפרדת ערוצים" },
 ];
@@ -31,6 +33,9 @@ export default function Studio() {
   const [lyrics, setLyrics] = useState("");
   const [theme, setTheme] = useState("");
   const [extendTarget, setExtendTarget] = useState<{ track: TrackView; choice: number } | null>(null);
+  const [remixTarget, setRemixTarget] = useState<{ track: TrackView; choice: number } | null>(null);
+  const [upload, setUpload] = useState<UploadedAudio | null>(null);
+  const [rightsConfirmed, setRightsConfirmed] = useState(false);
   const [stemUrl, setStemUrl] = useState("");
   const [stemResults, setStemResults] = useState<string[]>([]);
 
@@ -52,6 +57,14 @@ export default function Studio() {
       if (!extendTarget) return setError("תבחר שיר להארכה מהרשימה למטה");
       body.songId = extendTarget.track.choice_ids[extendTarget.choice];
     }
+    if (tab === "remix" && remixTarget && !upload) {
+      body.songId = remixTarget.track.choice_ids[remixTarget.choice];
+    }
+    if ((tab === "remix" || tab === "song") && upload) {
+      if (!rightsConfirmed) return setError("צריך לאשר שיש לך זכות להשתמש בשיר");
+      body.uploadPath = upload.path;
+      body.rightsConfirmed = true;
+    }
     const track = await run(() => api<TrackView>("/api/generate", { body }));
     if (track) upsert(track);
   }
@@ -71,6 +84,19 @@ export default function Studio() {
     setStemResults([]);
     const result = await run(() => api<{ urls: string[] }>("/api/stems", { body: { url } }));
     if (result) setStemResults(result.urls);
+  }
+
+  function chooseRemix(track: TrackView, choice: number) {
+    setRemixTarget({ track, choice });
+    setUpload(null);
+    setTab("remix");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function setUploadFile(value: UploadedAudio | null) {
+    setUpload(value);
+    setRightsConfirmed(false);
+    if (value) setRemixTarget(null);
   }
 
   function chooseExtend(track: TrackView, choice: number) {
@@ -114,6 +140,30 @@ export default function Studio() {
               />
             )}
 
+            {tab === "remix" && (
+              <>
+                <AudioUpload
+                  label="השיר לרימיקס"
+                  hint="MP3 או M4A, בין 10 שניות ל-6 דקות, עד 10MB. אפשר גם ללחוץ ״רימיקס״ על שיר מהרשימה למטה."
+                  value={upload}
+                  onChange={setUploadFile}
+                  rightsConfirmed={rightsConfirmed}
+                  onRightsChange={setRightsConfirmed}
+                />
+                {!upload && remixTarget && (
+                  <p className="rounded-xl bg-surface-2 p-3 text-sm">
+                    רימיקס ל: <b>{remixTarget.track.title || remixTarget.track.prompt || "ללא שם"}</b> (גרסה {remixTarget.choice + 1})
+                  </p>
+                )}
+                <textarea
+                  className={`${field} min-h-24`}
+                  placeholder="איך הרימיקס ישמע? למשל: גרסת האוס אנרגטית 124 BPM, או גרסה אקוסטית שקטה עם גיטרה"
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                />
+              </>
+            )}
+
             {tab === "instrumental" && (
               <textarea
                 className={`${field} min-h-24`}
@@ -147,12 +197,22 @@ export default function Studio() {
                     <button className={`${ghost} self-start`} disabled={busy || !lyrics.trim()} onClick={() => writeLyrics("extend")}>
                       המשך לי את המילים
                     </button>
-                    <input
-                      className={field}
-                      placeholder="סגנון (לא חובה): למשל רוק ישראלי, קול גברי, גיטרות"
-                      value={prompt}
-                      onChange={(e) => setPrompt(e.target.value)}
+                    <AudioUpload
+                      label="שיר בהשראה (לא חובה)"
+                      hint="קטע שהסגנון והאווירה שלו ילקחו לשיר החדש. 30 שניות ראשונות, MP3 או M4A, עד 10MB."
+                      value={upload}
+                      onChange={setUploadFile}
+                      rightsConfirmed={rightsConfirmed}
+                      onRightsChange={setRightsConfirmed}
                     />
+                    {!upload && (
+                      <input
+                        className={field}
+                        placeholder="סגנון (לא חובה): למשל רוק ישראלי, קול גברי, גיטרות"
+                        value={prompt}
+                        onChange={(e) => setPrompt(e.target.value)}
+                      />
+                    )}
                   </>
                 )}
               </>
@@ -206,7 +266,7 @@ export default function Studio() {
         {loaded && !loadError && tracks.length === 0 && <p className="text-muted">עוד לא יצרת שירים.</p>}
         <div className="grid gap-3">
           {tracks.slice(0, 10).map((t) => (
-            <TrackCard key={t.id} track={t} onDelete={remove} onExtend={chooseExtend} onStems={splitStems} />
+            <TrackCard key={t.id} track={t} onDelete={remove} onExtend={chooseExtend} onRemix={chooseRemix} onStems={splitStems} />
           ))}
         </div>
       </section>

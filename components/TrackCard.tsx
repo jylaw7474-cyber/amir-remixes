@@ -14,11 +14,13 @@ export default function TrackCard({
   track,
   onDelete,
   onExtend,
+  onRemix,
   onStems,
 }: {
   track: TrackView;
   onDelete?: (id: string) => void;
   onExtend?: (track: TrackView, choice: number) => void;
+  onRemix?: (track: TrackView, choice: number) => void;
   onStems?: (url: string) => void;
 }) {
   const done = isFinal(track);
@@ -56,6 +58,9 @@ export default function TrackCard({
             <a href={url} download className="text-accent hover:underline">הורדה</a>
             {onExtend && track.choice_ids[i] && (
               <button className="text-accent hover:underline" onClick={() => onExtend(track, i)}>הארכה</button>
+            )}
+            {onRemix && track.choice_ids[i] && (
+              <button className="text-accent hover:underline" onClick={() => onRemix(track, i)}>רימיקס</button>
             )}
             {onStems && (
               <button className="text-accent hover:underline" onClick={() => onStems(track.source_urls[i] ?? url)}>

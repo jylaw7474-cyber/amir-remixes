@@ -4,12 +4,14 @@
 create table if not exists public.tracks (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
-  mode text not null check (mode in ('easy', 'song', 'instrumental', 'extend')),
+  mode text not null check (mode in ('easy', 'song', 'instrumental', 'extend', 'remix')),
   task_kind text not null check (task_kind in ('song', 'instrumental')),
   task_id text not null,
   title text,
   prompt text,
   lyrics text,
+  -- the user's uploaded audio used as remix source or style reference, in our bucket
+  upload_path text,
   status text not null default 'pending',
   failed_reason text,
   -- Mureka's own URLs, as returned

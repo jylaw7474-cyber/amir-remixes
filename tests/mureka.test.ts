@@ -107,3 +107,34 @@ describe("stems", () => {
     expect(collectUrls(result)).toEqual(["https://s/all.zip", "https://s/v.mp3"]);
   });
 });
+
+describe("uploads, reference and remix", () => {
+  it("uploads by url as multipart with the purpose", async () => {
+    reply({ id: "file-1" });
+    const { uploadFileFromUrl } = await import("@/lib/mureka");
+    await expect(uploadFileFromUrl("https://bucket/signed.mp3", "remix")).resolves.toBe("file-1");
+    const [url, init] = fetchMock.mock.calls.at(-1)!;
+    expect(url).toBe("https://api.mureka.ai/v1/files/upload");
+    const form = (init as RequestInit).body as FormData;
+    expect(form.get("url")).toBe("https://bucket/signed.mp3");
+    expect(form.get("purpose")).toBe("remix");
+  });
+
+  it("a reference replaces the style prompt in song generation", async () => {
+    reply({ id: "t5" });
+    await startSong("la la", "rock", "ref-1");
+    expect(lastCall().body).toEqual({ lyrics: "la la", reference_id: "ref-1", model: "auto" });
+  });
+
+  it("remixes an uploaded file or an existing song", async () => {
+    const { startRemix } = await import("@/lib/mureka");
+    reply({ id: "t6" });
+    await startRemix({ uploadId: "file-1" }, "house version");
+    expect(lastCall().url).toBe("https://api.mureka.ai/v1/song/remix");
+    expect(lastCall().body).toEqual({ upload_audio_id: "file-1", prompt: "house version" });
+
+    reply({ id: "t7" });
+    await startRemix({ songId: "song-2" }, "acoustic");
+    expect(lastCall().body).toEqual({ song_id: "song-2", prompt: "acoustic" });
+  });
+});

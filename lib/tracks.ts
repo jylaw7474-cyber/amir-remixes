@@ -1,4 +1,4 @@
-export type Mode = "easy" | "song" | "instrumental" | "extend";
+export type Mode = "easy" | "song" | "instrumental" | "extend" | "remix";
 
 export interface Track {
   id: string;
@@ -8,6 +8,7 @@ export interface Track {
   title: string | null;
   prompt: string | null;
   lyrics: string | null;
+  upload_path: string | null;
   status: string;
   failed_reason: string | null;
   source_urls: string[];
@@ -26,4 +27,5 @@ export const MODE_LABELS: Record<Mode, string> = {
   song: "שיר מהמילים שלי",
   instrumental: "אינסטרומנטלי",
   extend: "הארכת שיר",
+  remix: "רימיקס",
 };

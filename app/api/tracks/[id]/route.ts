@@ -56,7 +56,7 @@ export async function DELETE(_request: Request, ctx: RouteContext<"/api/tracks/[
   const { data: track } = await auth.supabase.from("tracks").select("*").eq("id", id).single<Track>();
   if (!track) return NextResponse.json({ error: "לא נמצא" }, { status: 404 });
 
-  await removeFromStorage(auth.supabase, track.storage_paths);
+  await removeFromStorage(auth.supabase, [...track.storage_paths, ...(track.upload_path ? [track.upload_path] : [])]);
   const { error } = await auth.supabase.from("tracks").delete().eq("id", id);
   if (error) return errorResponse(error.message, 500);
   return NextResponse.json({ ok: true });
