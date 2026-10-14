@@ -18,6 +18,7 @@ async function UserNav() {
       </nav>
       <div className="ms-auto flex items-center gap-4 text-sm text-muted">
         <Credits />
+        <Link href="/account" className="hover:text-ink">סיסמה</Link>
         <SignOut />
       </div>
     </>
