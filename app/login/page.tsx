@@ -1,11 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 
 export default function LoginPage() {
-  const router = useRouter();
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -16,8 +14,8 @@ export default function LoginPage() {
     setError("");
     try {
       await api("/api/login", { body: { password } });
-      router.replace("/");
-      router.refresh();
+      // full load, so the proxy and the header both see the new cookie
+      window.location.assign("/");
     } catch (err) {
       setError((err as Error).message);
       setBusy(false);
@@ -37,7 +35,7 @@ export default function LoginPage() {
           placeholder="סיסמה"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="rounded-lg border border-line bg-surface-2 px-3 py-2 outline-none focus:border-accent"
+          className="rounded-lg border border-line bg-surface-2 px-3 py-2 text-base outline-none focus:border-accent"
         />
         <button disabled={busy} className="rounded-lg bg-accent px-4 py-2 font-bold text-on-accent disabled:opacity-50">
           {busy ? "רגע..." : "כניסה"}

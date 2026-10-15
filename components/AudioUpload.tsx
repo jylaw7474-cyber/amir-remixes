@@ -2,10 +2,8 @@
 
 import { useState } from "react";
 import { api } from "@/lib/api";
+import { prepareAudio } from "@/lib/audio-prepare";
 import { createClient } from "@/lib/supabase/client";
-
-const MAX_BYTES = 10 * 1024 * 1024;
-const EXTENSIONS = ["mp3", "m4a"];
 
 export interface UploadedAudio {
   path: string;
@@ -19,6 +17,7 @@ export interface UploadedAudio {
 export default function AudioUpload({
   label,
   hint,
+  maxSeconds,
   value,
   onChange,
   rightsConfirmed,
@@ -26,31 +25,36 @@ export default function AudioUpload({
 }: {
   label: string;
   hint: string;
+  /** Mureka keeps at most this much (30 s for a reference, 350 s for a remix) */
+  maxSeconds: number;
   value: UploadedAudio | null;
   onChange: (value: UploadedAudio | null) => void;
   rightsConfirmed: boolean;
   onRightsChange: (value: boolean) => void;
 }) {
-  const [state, setState] = useState<"idle" | "uploading" | "error">("idle");
+  const [state, setState] = useState<"idle" | "converting" | "uploading" | "error">("idle");
+  const [progress, setProgress] = useState(0);
   const [error, setError] = useState("");
 
   async function pick(file: File | undefined) {
     if (!file) return;
-    const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
-    if (!EXTENSIONS.includes(ext)) return fail("רק קבצי MP3 או M4A");
-    if (file.size > MAX_BYTES) return fail("הקובץ גדול מ-10MB");
-
-    setState("uploading");
+    setState("converting");
+    setProgress(0);
+    let prepared;
     let slot: { path: string; token: string };
     try {
-      slot = await api<{ path: string; token: string }>("/api/upload-url", { body: { ext } });
+      prepared = await prepareAudio(file, maxSeconds, setProgress);
+      setState("uploading");
+      slot = await api<{ path: string; token: string }>("/api/upload-url", { body: { ext: prepared.ext } });
     } catch (e) {
       return fail((e as Error).message);
     }
 
     const { error: uploadError } = await createClient()
       .storage.from("tracks")
-      .uploadToSignedUrl(slot.path, slot.token, file, { contentType: ext === "mp3" ? "audio/mpeg" : "audio/mp4" });
+      .uploadToSignedUrl(slot.path, slot.token, prepared.blob, {
+        contentType: prepared.ext === "mp3" ? "audio/mpeg" : "audio/mp4",
+      });
     if (uploadError) return fail(uploadError.message);
     const path = slot.path;
 
@@ -69,17 +73,21 @@ export default function AudioUpload({
       <p className="text-xs text-muted">{hint}</p>
       {value ? (
         <div className="flex items-center gap-3 text-sm">
-          <span className="truncate text-accent-2" dir="ltr">{value.name}</span>
+          <span className="min-w-0 truncate text-accent-2" dir="ltr">{value.name}</span>
           <button className="text-xs text-muted hover:text-danger" onClick={() => onChange(null)}>הסרה</button>
         </div>
       ) : (
         <label className="cursor-pointer self-start rounded-lg border border-accent px-3 py-1.5 text-sm text-accent">
-          {state === "uploading" ? "מעלה..." : "בחירת קובץ"}
+          {state === "converting"
+            ? `מכווץ... ${Math.round(progress * 100)}%`
+            : state === "uploading"
+              ? "מעלה..."
+              : "בחירת קובץ"}
           <input
             type="file"
-            accept=".mp3,.m4a,audio/mpeg,audio/mp4"
+            accept="audio/*,.mp3,.m4a,.wav,.flac,.aac,.ogg"
             className="hidden"
-            disabled={state === "uploading"}
+            disabled={state === "converting" || state === "uploading"}
             onChange={(e) => pick(e.target.files?.[0])}
           />
         </label>

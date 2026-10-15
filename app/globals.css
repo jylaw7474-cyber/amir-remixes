@@ -32,6 +32,16 @@
 
 html {
   color-scheme: dark;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  overflow-x: hidden;
+}
+
+/* iOS zooms into any field with text under 16px; keep every field at 16px */
+input,
+textarea,
+select {
+  font-size: 16px;
 }
 
 body {

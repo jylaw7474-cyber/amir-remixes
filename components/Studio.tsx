@@ -18,7 +18,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "stems", label: "הפרדת ערוצים" },
 ];
 
-const field = "w-full rounded-lg border border-line bg-surface-2 px-3 py-2 outline-none focus:border-accent";
+const field = "w-full min-w-0 text-base rounded-lg border border-line bg-surface-2 px-3 py-2 outline-none focus:border-accent";
 const button = "rounded-lg bg-accent px-5 py-2 font-bold text-on-accent disabled:opacity-50";
 const ghost = "whitespace-nowrap rounded-lg border border-accent px-3 py-1.5 text-sm text-accent disabled:opacity-50";
 
@@ -144,7 +144,8 @@ export default function Studio() {
               <>
                 <AudioUpload
                   label="השיר לרימיקס"
-                  hint="MP3 או M4A, בין 10 שניות ל-6 דקות, עד 10MB. אפשר גם ללחוץ ״רימיקס״ על שיר מהרשימה למטה."
+                  maxSeconds={350}
+                  hint="כל קובץ שמע, עד כ-6 דקות (מעבר לזה נחתך). קובץ גדול יכווץ לבד. אפשר גם ללחוץ ״רימיקס״ על שיר מהרשימה למטה."
                   value={upload}
                   onChange={setUploadFile}
                   rightsConfirmed={rightsConfirmed}
@@ -179,7 +180,7 @@ export default function Studio() {
                   <div className="flex flex-col gap-2 rounded-xl border border-dashed border-line p-3">
                     <p className="text-sm text-muted">אין מילים? תן נושא ונכתוב בשבילך:</p>
                     <div className="flex gap-2">
-                      <input className={field} placeholder="נושא לשיר" value={theme} onChange={(e) => setTheme(e.target.value)} />
+                      <input className={`${field} min-w-0`} placeholder="נושא לשיר" value={theme} onChange={(e) => setTheme(e.target.value)} />
                       <button className={ghost} disabled={busy || !theme.trim()} onClick={() => writeLyrics("generate")}>
                         כתוב מילים
                       </button>
@@ -199,7 +200,8 @@ export default function Studio() {
                     </button>
                     <AudioUpload
                       label="שיר בהשראה (לא חובה)"
-                      hint="קטע שהסגנון והאווירה שלו ילקחו לשיר החדש. 30 שניות ראשונות, MP3 או M4A, עד 10MB."
+                      maxSeconds={30}
+                      hint="קטע שהסגנון והאווירה שלו ילקחו לשיר החדש. נלקחות 30 השניות הראשונות. כל קובץ שמע, קובץ גדול יכווץ לבד."
                       value={upload}
                       onChange={setUploadFile}
                       rightsConfirmed={rightsConfirmed}
